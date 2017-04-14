@@ -292,9 +292,9 @@ public class ItemSearch {
 	public static void main(String[] args) {
 		Item.db = new jdbc.Sqldrivre();
 		SearchItem("Tmall");
-		SearchItem("Jd");
-		SearchItem("Ymx");
-		SearchItem("Dd");
+//		SearchItem("Jd");
+//		SearchItem("Ymx");
+//		SearchItem("Dd");
 		Item.db.close();
 	}
 }

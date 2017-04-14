@@ -26,7 +26,9 @@ public class Delete_Table{
 		db = new jdbc.Sqldrivre();
 		
 		delete("index_name");
-		
+		delete("item");
+	//	delete("itemlist");
+
 		db.close();
 	}
 }

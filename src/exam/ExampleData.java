@@ -1,34 +1,31 @@
-package crawl;
+package exam;
 
-import java.awt.font.NumericShaper.Range;
 import java.io.IOException;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.net.URLDecoder;
+import java.lang.reflect.Array;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.jsoup.*;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class ItemlistSearch {
+import crawl.Itemlist;
 
-	static int count = 0;
-
-	static void SearchTm(String query, int page) throws ClientProtocolException, IOException {
+public class ExampleData {
+	public static void main(String[] args) {
+		getExampleData("阿迪达斯 adidas neo 男子 休闲鞋 DAILY");
+	}
+	
+	static ArrayList<String> getTM(String query, int page) throws ClientProtocolException, IOException {
+		ArrayList<String> ret = new ArrayList<>();
 		String q = query;
 		query = URLEncoder.encode(query);
 		String s = String.valueOf(page * 60);
@@ -46,10 +43,7 @@ public class ItemlistSearch {
 					String linkHref = link.attr("href");
 					if (linkHref.contains("detail")) {
 						linkHref = linkHref.substring(0, linkHref.indexOf('&'));
-						String uid = linkHref.substring(linkHref.indexOf('=') + 1, linkHref.length());
-						count++;
-						System.out.println(count + " " + linkHref + " " + uid);
-						Itemlist.insert(uid, linkHref, q, "Tmall");
+						ret.add(linkHref);
 					}
 				}
 			} finally {
@@ -59,9 +53,11 @@ public class ItemlistSearch {
 		} finally {
 			httpclient.close();
 		}
+		return ret;
 	}
-
-	static void SearchJd(String query, int page) throws ClientProtocolException, IOException {
+	
+	static ArrayList<String> getJD(String query, int page) throws ClientProtocolException, IOException {
+		ArrayList<String> ret = new ArrayList<>();
 		String q = query;
 		query = URLEncoder.encode(query);
 		String s = String.valueOf(page);
@@ -78,10 +74,7 @@ public class ItemlistSearch {
 				for (Element link : links) {
 					String linkHref = link.attr("href");
 					if (linkHref.contains("item") && !linkHref.contains("#")) {
-						String uid = linkHref.substring(14, linkHref.length() - 5);
-						count++;
-						System.out.println(count + " " + linkHref + " " + uid);
-						Itemlist.insert(uid, linkHref, q, "Jd");
+						ret.add(linkHref);
 					}
 				}
 			} finally {
@@ -91,9 +84,11 @@ public class ItemlistSearch {
 		} finally {
 			httpclient.close();
 		}
+		return ret;
 	}
 
-	static void SearchYmx(String query, int page) throws ClientProtocolException, IOException {
+	static ArrayList<String> getYMX(String query, int page) throws ClientProtocolException, IOException {
+		ArrayList<String> ret = new ArrayList<>();
 		String q = query;
 		query = URLEncoder.encode(query);
 		String s = String.valueOf(page + 1);
@@ -113,10 +108,7 @@ public class ItemlistSearch {
 					try {
 						String type = linkHref.substring(22, linkHref.indexOf("dp") - 1);
 						if (type.contains(query)) {
-							String uid = linkHref.substring(linkHref.indexOf("dp") + 3, linkHref.length());
-							count++;
-							System.out.println(count + " " + linkHref + " " + uid);
-							Itemlist.insert(uid, linkHref, q, "Ymx");
+							ret.add(linkHref);
 						}
 					} catch (Exception e) {
 						// TODO: handle exception
@@ -132,9 +124,11 @@ public class ItemlistSearch {
 		} finally {
 			httpclient.close();
 		}
+		return ret;
 	}
 	
-	static void SearchDd(String query, int page) throws ClientProtocolException, IOException {
+	static ArrayList<String> getDD(String query, int page) throws ClientProtocolException, IOException {
+		ArrayList<String> ret = new ArrayList<>();
 		String q = query;
 		query = URLEncoder.encode(query);
 		String s = String.valueOf(page + 1);
@@ -151,10 +145,7 @@ public class ItemlistSearch {
 				for (Element link : links) {
 					String linkHref = link.attr("href");
 					if (linkHref.contains("product") && !linkHref.contains("#")) {
-						String uid = linkHref.substring(28, linkHref.length() - 5);
-						count++;
-						System.out.println(count + " " + linkHref + " " + uid);
-						Itemlist.insert(uid, linkHref, q, "Dd");
+						ret.add(linkHref);
 					}
 				}
 			} finally {
@@ -164,34 +155,35 @@ public class ItemlistSearch {
 		} finally {
 			httpclient.close();
 		}
+		return ret;
 	}
-		
-	public static void main(String[] args) throws Exception {
-		Itemlist.db = new jdbc.Sqldrivre();
-		String[] keywords = new String[2];
-		keywords[0] = "手机";
-		keywords[1] = "鞋";
-		for (int i = 0; i < 100; i++) {
-			for(String word : keywords){
-				SearchTm(word, i);				
-			}
+	
+	public static ArrayList<String> getExampleData(String query){
+		ArrayList<String> results = new ArrayList<>();
+		ArrayList<String> tm = new ArrayList<>();
+		ArrayList<String> jd = new ArrayList<>();
+		ArrayList<String> ymx = new ArrayList<>();
+		ArrayList<String> dd = new ArrayList<>();
+		try {
+			tm = getTM(query, 0);
+			jd = getJD(query, 0);
+			ymx = getYMX(query, 0);
+			dd = getDD(query, 0);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-//		for (int i = 0; i < 100; i++) {
-//			for(String word : keywords){
-//				SearchJd(word, i);				
-//			}
-//		}
-//		for (int i = 0; i < 100; i++) {
-//			for(String word : keywords){
-//				SearchDd(word, i);				
-//			}
-//		}
-//		for (int i = 0; i < 100; i++) {
-//			for(String word : keywords){
-//				SearchYmx(word, i);				
-//			}
-//		}	
-		Itemlist.db.close();
+		System.out.println(tm);
+		System.out.println(jd);
+		System.out.println(ymx);
+		System.out.println(dd);
+		results.addAll(tm);
+		results.addAll(jd);
+		results.addAll(ymx);
+		results.addAll(dd);
+		return results;
 	}
-
 }

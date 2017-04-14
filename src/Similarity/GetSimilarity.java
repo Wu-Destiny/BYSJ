@@ -25,24 +25,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.transform.URIResolver;
+
 import com.huaban.analysis.jieba.JiebaSegmenter;
 
 public class GetSimilarity {
 
 	public static final String IP_ADDR = "127.0.0.1";//
-	public static final int PORT = 8888;
+	public static final int PORT = 18888;
 
 	static String mydetail = "";
 	static String mypicurl = "";
 	static String sql = null;
-	static jdbc.Sqldrivre db1 = null;
+	public static jdbc.Sqldrivre db1 = null;
 	static ResultSet ret = null;
-	static String[] stopwords;
+	public static String[] stopwords;
 
 	public GetSimilarity() {
 	}
 
-	static List<String> Search(String input, String detail, String picurl) {
+	public static List<String> Search(String input, String detail, String picurl) {
 
 		GetSimilarity.mydetail = detail;
 		GetSimilarity.mypicurl = picurl;
@@ -101,7 +103,7 @@ public class GetSimilarity {
 		return result;
 	}
 
-	static List<String> Imformation(List<String> Ids) {
+	public static List<String> Imformation(List<String> Ids) {
 		Map<String, Integer> result = new HashMap<>();
 		for (String id : Ids) {
 			sql = "select *from item where id = '" + id + "';";
@@ -122,14 +124,12 @@ public class GetSimilarity {
 					String key = name + "%%" + url + "%%" + price + "%%" + source;
 					try {
 						download(picurl, "PHONE2.jpg", "D:\\Share\\OPENCV\\OPENCV");
-					}catch (IllegalArgumentException e) {
-						System.out.println("没有图片");
 					} catch (Exception e1) {
-						e1.printStackTrace();
+						System.err.println("图片地址失效");
 					}
 					double TextSi = SimilarText.getSimilarity(mydetail, detail);
 					key += "%%" + (int) (TextSi * 100);
-					int value = (int) (TextSi * 100 / 2);
+					int value = (int) (TextSi * 100 / 2*0.8);
 					int picValue = 0;
 
 					try {
@@ -145,14 +145,16 @@ public class GetSimilarity {
 						e.printStackTrace();
 					}
 					key += "%%" + picValue;
-					value += (picValue + 1) / 2;
+					key += "%%" + picurl;
+					value += picValue*1.5/2;
+					System.out.println("value :"+picValue+" "+value);
 					result.put(key, value);
 				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
-		
+
 		Set<String> keys = result.keySet();
 		List<Map.Entry<String, Integer>> infoIds = new ArrayList<Map.Entry<String, Integer>>(result.entrySet());
 		Collections.sort(infoIds, new Comparator<Map.Entry<String, Integer>>() {
@@ -160,28 +162,51 @@ public class GetSimilarity {
 				return (o2.getValue() - o1.getValue());
 			}
 		});
-		
+
 		List<String> ret = new ArrayList<>();
-		for (int i = 0; i < (infoIds.size() < 7 ? infoIds.size() : 7); i++) {
+		int size = 10;
+		if(infoIds.size() <= 10  )size = infoIds.size();
+		for (int i = 0; ret.size() < size; i++) {
+			if(i==21)break;
 			String id = infoIds.get(i).toString().split("=")[0];
-//			System.out.println(id);
-			ret.add(id);
+			// System.out.println(id);
+			if (id.split("%%").length == 7) {
+				ret.add(id);
+			}
 		}
-		
-		return ret;
+		List<String> rets = new ArrayList<>();
+		while(!ret.isEmpty()){
+			double min = Integer.MAX_VALUE;
+			int index = 0;
+			for(int i = 0; i < ret.size();i++	){
+				String[] ks = ret.get(i).split("%%");
+				double price = Double.valueOf(ks[2]);
+				if(price<=min){
+					min = price;
+					index = i;
+				}
+			}
+			rets.add(ret.get(index));
+			ret.remove(index);
+		}
+		return rets;
 	}
-	
-	static void display(List<String> rets){
-		for(String key : rets){
-			String[] keys = key.split("%%");
-			System.out.println("|--------------------------|");
-			System.out.println("| 名称 "+keys[0]);
-			System.out.println("| 网址 "+keys[1]);
-			System.out.println("| 价格 "+keys[2]);
-			System.out.println("| 所属 "+keys[3]);
-			System.out.println("| 文本相似度 "+keys[4]);
-			System.out.println("| 图片相似度 "+keys[5]);
-			System.out.println("|--------------------------|");
+
+	public static void display(List<String> rets) {
+		for (String key : rets) {
+			try {
+				String[] keys = key.split("%%");
+				System.out.println("|--------------------------|");
+				System.out.println("| 名称 " + keys[0]);
+				System.out.println("| 网址 " + keys[1]);
+				System.out.println("| 价格 " + keys[2]);
+				System.out.println("| 所属 " + keys[3]);
+				System.out.println("| 文本相似度 " + keys[4]);
+				System.out.println("| 图片相似度 " + keys[5]);
+				System.out.println("|--------------------------|");
+			} catch (Exception e) {
+
+			}
 		}
 	}
 
@@ -203,6 +228,9 @@ public class GetSimilarity {
 	public static void download(String urlString, String filename, String savePath) throws Exception {
 		if (!urlString.contains("http")) {
 			urlString = "http:" + urlString;
+		}
+		if (urlString.contains("http:////")) {
+			urlString = urlString.replace("http:////", "http://");
 		}
 		URL url = new URL(urlString);
 		URLConnection con = url.openConnection();

@@ -12,7 +12,7 @@ public class NameSimilarity {
 	static String sql = null;
 	static jdbc.Sqldrivre db1 = null;
 	static ResultSet ret = null;
-
+	public static JiebaSegmenter segmenter;
 	public static void run() {
 		sql = "select *from item;";
 		db1 = new jdbc.Sqldrivre();
@@ -22,10 +22,9 @@ public class NameSimilarity {
 			PreparedStatement pst = db1.conn.prepareStatement(sql);
 			ret = pst.executeQuery();
 			while (ret.next()) {
-				String name = ret.getString(1).replace(" ", "");
+				String name = ret.getString(1).replace(" ", "").replace("+", "");
 				id = ret.getString(9);
-				// System.out.println( id + "\t" + name);
-				JiebaSegmenter segmenter = new JiebaSegmenter();
+				 System.out.println(id + "\t" + name);
 				List<String> result = segmenter.sentenceProcess(name);
 				for (String r : result) {
 					try {
@@ -51,6 +50,7 @@ public class NameSimilarity {
 	}
 
 	public static void main(String[] args) {
+		NameSimilarity.segmenter = new JiebaSegmenter();
 		run();
 	}
 }

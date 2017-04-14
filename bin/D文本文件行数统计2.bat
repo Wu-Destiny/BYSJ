@@ -1,0 +1,88 @@
+ÿş›C&cls
+@echo off
+title ´¿ÎÄ±¾ÎÄ¼şĞĞÊıÍ³¼Æ-ËÎ¹ğ·«ÖÆ×÷
+
+	set /a FileNum=0,passFile=0,TotalLine=0
+	set out=%~dp0ÏêÏ¸ĞÅÏ¢.txt
+	del /f /a /q "%out%" >nul 2>nul
+
+if not "%~1"=="" echo.&echo ÕıÔÚÍ³¼Æ£¬ÇëÉÔºó...&goto Main
+
+:Setting
+
+	set file=C:\???\
+	echo.
+	echo   ÇëÊäÈëÎÄ¼ş»òÄ¿Â¼µÄÂ·¾¶,»òÕßÖ±½ÓÍÏ·Åµ½´Ë£º
+	echo.
+	set /p file=
+	Call:GetRealPath %file%
+	if "%file:~-1%"=="\" set file=%file:~1,-1%
+	if not exist "%file%" echo ÕÒ²»µ½Ö¸¶¨µÄÂ·¾¶£¡&&goto Setting
+	cls
+	echo.&echo ÕıÔÚÍ³¼Æ£¬ÇëÉÔºó...&goto Main
+
+:GetRealPath
+
+	set file=%~1
+
+	:AddPath
+
+		shift /1
+		if "%~1"=="" goto:eof
+		set file=%file% %~1
+
+	goto AddPath
+
+goto:eof
+
+:Main
+
+	if "%file%"=="" set file=%~1
+	if not exist "%file%\" Call:Statistic "%file%"&&goto Loop
+	for /r "%file%" %%i in (*.*) do Call:Statistic "%%~i"
+
+:Loop
+shift /1
+set file=
+if "%~1"=="" (goto End) else (goto Main)
+
+:Statistic
+
+	set /a passFile+=1
+	set w=echo.^&echo ¡¾¾¯¸æ%passFile%:¡¿^&echo ÎÄ¼ş-"%~1" ¡­¡­
+	if not exist %1 %w%ÎÄ¼şÃûÖĞº¬ÓĞÅú´¦ÀíÎŞ·¨´¦ÀíµÄÌØÊâ×Ö·û£¬ÒÑÌø¹ı&goto:eof
+
+	Call:FileSize %1
+
+	if "%IsTooBig%"=="True" %w%Ì«´ó£¬ÒÑÌø¹ı&goto:eof
+
+	set /a Line=0
+	for /f "usebackq" %%i in ("%~1") do set /a Line+=1
+	
+	if %Line%==0 if not %fileSize%==0 if not "%~x1"==".txt" %w%²»ÊÇ´¿ÎÄ±¾ÎÄ¼ş£¬ÒÑºöÂÔ&goto:eof
+
+	set /a passFile-=1,FileNum+=1,TotalLine+=%Line%
+	echo ÎÄ¼ş-"%~1" ¡­¡­ ¹² %Line% ĞĞ>>"%out%"
+
+goto:eof
+
+:FileSize
+
+	set IsTooBig=False
+	set fileSize=%~z1
+	set foreSize=%fileSize:~0,8%
+	set afterSize=%fileSize:~-8%
+
+	if not "%foreSize%"=="%afterSize%" set IsTooBig=True
+	if "%foreSize%"=="%afterSize%" if /i %fileSize% GTR 26214400 set IsTooBig=True
+
+goto:eof
+
+:End
+	
+	echo.&echo ¹²%FileNum%¸ö´¿ÎÄ±¾ÎÄ¼ş£¬ÕâĞ©ÎÄ¼şµÄ×ÜĞĞÊıÎª%TotalLine%ĞĞ&echo.
+	if /i %passFile% GTR 0 echo ÒÑÌø¹ı%passFile%¸öÎŞ·¨´¦ÀíµÄÎÄ¼ş...&echo.
+	if not exist "%out%" pause&goto:eof
+	echo °´ÈÎÒâ¼üÏÔÊ¾ÏêÏ¸ĞÅÏ¢...
+	pause>nul
+	write "%out%" 2>nul||start "" "%out%"
